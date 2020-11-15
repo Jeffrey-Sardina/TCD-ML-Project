@@ -34,5 +34,8 @@ Linux: (remove duplicates)
 Count words in cleaned files
     Run count_words.py
 
+Manual
+    Label books by year and put them in annotated/
+
 Todo
-    samples files and label by year
+    samples files from annotated/
