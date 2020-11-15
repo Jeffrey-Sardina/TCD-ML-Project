@@ -15,6 +15,8 @@ Files
 - .gitignore
     - Any file larger than 25MB should be ignored since Github will refuse to store it.
     - Any large folders (such as the raw data) also should be ignored.
+- annotated.txt
+    - A list of books that have been annotated *(by their names in the raw data folder). Please add books here as you annotate them.
 - countwords.py
     - Counts the number of total words in all the raw data folder (not in this repo) and prints the counts out to lengths.csv.
 - preprocess.py
@@ -22,7 +24,8 @@ Files
 - sample.py
     - Takes a random samples to text from a file. All samples should be of the same length across books.
     - Not yet implemented.
+- train.py
+    - For code to be used in training our model.
+    - Not yet implemented.
 - workflow
     - Describers the workflow we have used to far to generate our data.
-- annotated.txt
-    - A list of books that have been annotated *(by their names in the raw data folder). Please add books here as you annotate them.
