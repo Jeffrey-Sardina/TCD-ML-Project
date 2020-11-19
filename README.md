@@ -18,7 +18,11 @@ Files
 - annotated.txt
     - A list of books that have been annotated *(by their names in the raw data folder). Please add books here as you annotate them.
 - countwords.py
-    - Counts the number of total words in all the raw data folder (not in this repo) and prints the counts out to lengths.csv.
+    - Counts the number of total words in all the given data folder (not in this repo) and prints the counts out to a csv.
+- lengths.csv
+    - contains the lengths of all books in the clean_enough/ folder
+- lengths_annotated.csv
+    - contains the lengths of all books in the annotated/ folder
 - preprocess.py
     - Removes some of the meta-data in a book. Not all meta-data is structured, so some books may still have some that should be removed later manually when years are annotated.
 - sample.py

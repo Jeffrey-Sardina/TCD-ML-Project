@@ -1,8 +1,7 @@
 import glob
 import os
-import matplotlib.pyplot as plt
 
-book_dir = 'clean_enough/'
+book_dir = 'annotated/'
 
 def get_files(dir):
     return glob.glob(os.path.join(book_dir, '*.txt'))
@@ -10,7 +9,7 @@ def get_files(dir):
 def main():
     book_file_names = get_files(book_dir)
     lengths = []
-    with open('lengths.csv', 'w') as out:
+    with open('lengths_annotated.csv', 'w') as out:
         for book_file_name in book_file_names:
             with open(book_file_name, 'r') as inp:
                 num_words = 0
