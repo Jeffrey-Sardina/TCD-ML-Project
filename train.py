@@ -26,168 +26,131 @@ def create_input_array(documents, phrase_len, min_df, max_df):
     X = vectorizer.fit_transform(documents)
     return X
 
-def lasso_cross_validate_alpha(alphas, fold, X, y):
-    kf = KFold(n_splits=fold, shuffle=True)
-    mean_errors = []
-    std_errors = []
-    for alpha in alphas:
-        model = Lasso(alpha=alpha)
-        MSEs = []
-        for train, test in kf.split(X):
-            model.fit(X[train], y[train])
-            ypred = model.predict(X[test])
-            MSEs.append(mean_squared_error(y[test], ypred))
-        MSEs = np.array(MSEs)
-        mean_errors.append(MSEs.mean())
-        std_errors.append(MSEs.std())
-    return mean_errors, std_errors
-
-def ridge_cross_validate_alpha(alphas, fold, X, y):
-    kf = KFold(n_splits=fold, shuffle=True)
-    mean_errors = []
-    std_errors = []
-    for alpha in alphas:
-        model = Ridge(alpha=alpha)
-        MSEs = []
-        for train, test in kf.split(X):
-            model.fit(X[train], y[train])
-            ypred = model.predict(X[test])
-            MSEs.append(mean_squared_error(y[test], ypred))
-        MSEs = np.array(MSEs)
-        mean_errors.append(MSEs.mean())
-        std_errors.append(MSEs.std())
-    return mean_errors, std_errors
-
-def kNN_cross_validate_k(ks, gamma, fold, X, y):
-    kf = KFold(n_splits=fold, shuffle=True)
-    mean_errors = []
-    std_errors = []
-    for k in ks:
-        model = KNeighborsRegressor(n_neighbors=k, weights=create_gaussian_kernel_function(gamma))
-        MSEs = []
-        for train, test in kf.split(X):
-            model.fit(X[train], y[train])
-            ypred = model.predict(X[test])
-            MSEs.append(mean_squared_error(y[test], ypred))
-        MSEs = np.array(MSEs)
-        mean_errors.append(MSEs.mean())
-        std_errors.append(MSEs.std())
-    return mean_errors, std_errors
-
-def kNN_cross_validate_gamma(gammas, k, fold, X, y):
-    kf = KFold(n_splits=fold, shuffle=True)
-    mean_errors = []
-    std_errors = []
-    for gamma in gammas:
-        model = KNeighborsRegressor(n_neighbors=k, weights=create_gaussian_kernel_function(gamma))
-        MSEs = []
-        for train, test in kf.split(X):
-            model.fit(X[train], y[train])
-            ypred = model.predict(X[test])
-            MSEs.append(mean_squared_error(y[test], ypred))
-        MSEs = np.array(MSEs)
-        mean_errors.append(MSEs.mean())
-        std_errors.append(MSEs.std())
-    return mean_errors, std_errors
-
-def plot_cross_validation(params, param_name, mean_errors, std_errors, title):
-    plt.cla()
-    plt.rc('font', size=18)
-    plt.rcParams['figure.constrained_layout.use'] = True
-    plt.errorbar(params, mean_errors, yerr=std_errors, linewidth=1)
-    plt.xlabel(param_name)
-    plt.ylabel('Mean square error')
-    plt.title(title)
-    plt.savefig(title + '.png', bbox_inches='tight')
-
 def load_data(fold, phrase_len, min_df, max_df):
     #Gather and process data into a form that we can run ML on
     documents, y = sample.main()
     X = create_input_array(documents, phrase_len, min_df, max_df)
 
     #Split into train and test segments
-    indices = np.arange(X.size)
-    train, test = train_test_split(indices, test_size=1 / fold)
-    return X, y, train, test
+    indices = list(np.arange(X.size))
+    xtrain, xtest, ytrain, ytest = train_test_split(X, y, test_size=1 / fold)
+    return X, y, xtrain, xtest, ytrain, ytest
 
-def cross_validations(fold, X, y):
-    alphas = []
-    mean_errors, std_errors = lasso_cross_validate_alpha(alphas, fold, X, y)
-    plot_cross_validation(alphas, 'alpha', mean_errors, std_errors, 'Cross-validation of Lasso alpha')
-
-    alphas = []
-    mean_errors, std_errors = ridge_cross_validate_alpha(alphas, fold, X, y)
-    plot_cross_validation(alphas, 'alpha', mean_errors, std_errors, 'Cross-validation of Ridge alpha')
-
-    ks = []
-    gamma = 0
-    mean_errors, std_errors = kNN_cross_validate_k(ks, gamma, fold, X, y)
-    plot_cross_validation(ks, 'k', mean_errors, std_errors, 'Cross-validation of kNN with gamma=' + str(gamma))
-
-    gammas = []
-    k = 0
-    mean_errors, std_errors = kNN_cross_validate_k(ks, gamma, fold, X, y)
-    plot_cross_validation(gammas, 'gamma', mean_errors, std_errors, 'Cross-validation of kNN with k=' + str(gamma))
-
-def evaluations(X, y, train, test, k, gamma, alpha):
+def evaluations(X, y, xtrain, xtest, ytrain, ytest, k, gamma, alpha, phrase_len):
     #Create models
-    knn_model = KNeighborsRegressor(n_neighbors=k, weights=create_gaussian_kernel_function(gamma)).fit(X[train], y[train])
-    lin_reg_model = LinearRegression().fit(X[train], y[train])
-    lasso_model = Lasso(alpha=alpha).fit(X[train], y[train])
-    ridge_model = Ridge(alpha=alpha).fit(X[train], y[train])
-    baseline = DummyRegressor(strategy="mean").fit(X[train], y[train])
+    #knn_model = KNeighborsRegressor(n_neighbors=k, weights=create_gaussian_kernel_function(gamma)).fit(X[train], y[train])
+    lin_reg_model = LinearRegression().fit(xtrain, ytrain)
+    lasso_model = Lasso(alpha=alpha).fit(xtrain, ytrain)
+    ridge_model = Ridge(alpha=alpha).fit(xtrain, ytrain)
+    baseline = DummyRegressor(strategy="mean").fit(xtrain, ytrain)
 
     #Evaluate models
-    knn_mse = mean_squared_error(y[test], knn_model.predict(X[test]))
-    lin_reg_mse = mean_squared_error(y[test], lin_reg_model.predict(X[test]))
-    lasso_mse = mean_squared_error(y[test], lasso_model.predict(X[test]))
-    ridge_mse = mean_squared_error(y[test], ridge_model.predict(X[test]))
-    baseline_mse = mean_squared_error(y[test], baseline.predict(X[test]))
+    #knn_mse = mean_squared_error(y[test], knn_model.predict(X[test]))
+    lin_reg_mse = mean_squared_error(ytest, lin_reg_model.predict(xtest))
+    lasso_mse = mean_squared_error(ytest, lasso_model.predict(xtest))
+    ridge_mse = mean_squared_error(ytest, ridge_model.predict(xtest))
+    baseline_mse = mean_squared_error(ytest, baseline.predict(xtest))
 
-    print('Model evaluations (MSE)')
-    print('knn_mse,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
-    print(knn_mse,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse, sep=',')
-    print()
+    return phrase_len,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse
 
 def main():
-    #hyperparameters
-    #to tf-idf tokenizer
-    phrase_len = 5
+    #evaluate models
+    #(hyper)parameters
+    phrase_len = 2
     min_df = int(1) #int for absolute counts, float for proportion
     max_df= float(1.0) #int for absolute counts, float for proportion
-
-    #To kNN
     gamma = 0
     k = 3
-
-    #To lasso and ridge regession
-    alpha = 1
-
-    #Parameters
-    #to kFold cross-validation
+    alpha = .01
     fold = 5
 
-    X, y, train, test = load_data(fold, phrase_len, min_df, max_df)
-    print(X)
-
-    '''#generate various input matricies based on the hyperparameters to cross-validate them
     input_datas = []
-    phrase_lens = []
-    for val in range(phrase_len):
-        input_datas.append(load_data(fold, val, min_df, max_df))
-
-    min_dfs = []
-    for val in range(min_dfs):
-        input_datas.append(load_data(fold, phrase_len, val, max_df))
-
-    max_dfs = []
-    for val in range(max_dfs):
+    max_dfs = [0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
+    for val in max_dfs:
         input_datas.append(load_data(fold, phrase_len, min_df, val))
 
-    #Validate and evaluate models
-    for X, y, train, test in input_datas:
-        cross_validations(fold, X, y)
-        evaluations(X, y, train, test, k, gamma, alpha)'''
+    data_str = ''
+    for i, (X, y, xtrain, xtest, ytrain, ytest) in enumerate(input_datas):
+        data = evaluations(X, y, xtrain, xtest, ytrain, ytest, k, gamma, alpha, max_dfs[i])
+        data_str += ','.join(str(x) for x in data) + '\n'
+    print('Model evaluations (MSE)')
+    print('Data for max DF')
+    print('max_df,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
+    print(data_str)
+
+    #evaluate models
+    #(hyper)parameters
+    phrase_len = 2
+    min_df = int(1) #int for absolute counts, float for proportion
+    max_df= float(1.0) #int for absolute counts, float for proportion
+    gamma = 0
+    k = 3
+    alpha = .01
+    fold = 5
+
+    input_datas = []
+    min_dfs = [int(1)]
+    for val in min_dfs:
+        input_datas.append(load_data(fold, phrase_len, val, max_df))
+
+    data_str = ''
+    for i, (X, y, xtrain, xtest, ytrain, ytest) in enumerate(input_datas):
+        data = evaluations(X, y, xtrain, xtest, ytrain, ytest, k, gamma, alpha, min_dfs[i])
+        data_str += ','.join(str(x) for x in data) + '\n'
+    print('Model evaluations (MSE)')
+    print('Data for min DF')
+    print('min_df,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
+    print(data_str)
+
+    #evaluate models
+    #(hyper)parameters
+    phrase_len = 2
+    min_df = int(1) #int for absolute counts, float for proportion
+    max_df= float(1.0) #int for absolute counts, float for proportion
+    gamma = 0
+    k = 3
+    alpha = .01
+    fold = 5
+
+    input_datas = []
+    phrase_lens = [1, 3, 5, 7, 9]
+    for val in phrase_lens:
+        input_datas.append(load_data(fold, val, min_df, max_df))
+
+    data_str = ''
+    for i, (X, y, xtrain, xtest, ytrain, ytest) in enumerate(input_datas):
+        data = evaluations(X, y, xtrain, xtest, ytrain, ytest, k, gamma, alpha, phrase_lens[i])
+        data_str += ','.join(str(x) for x in data) + '\n'
+    print('Model evaluations (MSE)')
+    print('Data for phrase length')
+    print('phrase_len,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
+    print(data_str)
+
+    #evaluate models
+    #(hyper)parameters
+    phrase_len = 2
+    min_df = int(1) #int for absolute counts, float for proportion
+    max_df= float(1.0) #int for absolute counts, float for proportion
+    gamma = 0
+    k = 3
+    alpha = .01
+    fold = 5
+
+    input_datas = []
+    alphas = [100, 10, 1, .1, .01, .001]
+    for _ in alphas:
+        input_datas.append(load_data(fold, phrase_len, min_df, max_df))
+
+    data_str = ''
+    for i, (X, y, xtrain, xtest, ytrain, ytest) in enumerate(input_datas):
+        data = evaluations(X, y, xtrain, xtest, ytrain, ytest, k, gamma, alphas[i], alphas[i])
+        data_str += ','.join(str(x) for x in data) + '\n'
+    print('Model evaluations (MSE)')
+    print('Data for alpha')
+    print('alpha,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
+    print(data_str)
+
+    
 
 if __name__ == '__main__':
     main()
