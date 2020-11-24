@@ -7,6 +7,7 @@ from sklearn.dummy import DummyRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.metrics import mean_squared_error
+import sample
 
 def create_gaussian_kernel_function(gamma):
     '''
@@ -17,16 +18,12 @@ def create_gaussian_kernel_function(gamma):
         return weights / np.sum(weights)
     return gaussian_kernel_function
 
-def create_input_array(documents, min_len, max_len, min_df, max_df):
+def create_input_array(documents, phrase_len, min_df, max_df):
     '''
     This function creates a bag of words (X / input) matrix to be used in the model based on the given documents
     '''
-    vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(min_len, max_len), min_df=min_df, max_df=max_df)
+    vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(phrase_len, phrase_len), min_df=min_df, max_df=max_df)
     X = vectorizer.fit_transform(documents)
-    print('bag of words sumary')
-    print(vectorizer.get_feature_names())
-    print(X.toarray())
-    print()
     return X
 
 def lasso_cross_validate_alpha(alphas, fold, X, y):
@@ -103,13 +100,13 @@ def plot_cross_validation(params, param_name, mean_errors, std_errors, title):
     plt.title(title)
     plt.savefig(title + '.png', bbox_inches='tight')
 
-def load_data(fold, min_len, max_len, min_df, max_df):
+def load_data(fold, phrase_len, min_df, max_df):
     #Gather and process data into a form that we can run ML on
-    documents, y = ['This is the first document.','This is the second second document.','And the third one.','Is this the first document?'], [2020, 2020, 2020, 2020] #Call to sampling.py
-    X = create_input_array(documents, min_len, max_len, min_df, max_df)
+    documents, y = sample.main()
+    X = create_input_array(documents, phrase_len, min_df, max_df)
 
     #Split into train and test segments
-    indices = np.arange(len(X))
+    indices = np.arange(X.size)
     train, test = train_test_split(indices, test_size=1 / fold)
     return X, y, train, test
 
@@ -155,8 +152,7 @@ def evaluations(X, y, train, test, k, gamma, alpha):
 def main():
     #hyperparameters
     #to tf-idf tokenizer
-    min_len = 2
-    max_len = 3
+    phrase_len = 5
     min_df = int(1) #int for absolute counts, float for proportion
     max_df= float(1.0) #int for absolute counts, float for proportion
 
@@ -171,28 +167,27 @@ def main():
     #to kFold cross-validation
     fold = 5
 
-    #generate various input matricies based on the hyperparameters to cross-validate them
-    input_datas = []
-    min_lens = []
-    for val in range(min_lens):
-        input_datas.append(load_data(fold, val, max_len, min_df, max_df))
+    X, y, train, test = load_data(fold, phrase_len, min_df, max_df)
+    print(X)
 
-    max_lens = []
-    for val in range(min_lens):
-        input_datas.append(load_data(fold, min_len, val, min_df, max_df))
+    '''#generate various input matricies based on the hyperparameters to cross-validate them
+    input_datas = []
+    phrase_lens = []
+    for val in range(phrase_len):
+        input_datas.append(load_data(fold, val, min_df, max_df))
 
     min_dfs = []
-    for val in range(min_lens):
-        input_datas.append(load_data(fold, min_len, max_len, val, max_df))
+    for val in range(min_dfs):
+        input_datas.append(load_data(fold, phrase_len, val, max_df))
 
     max_dfs = []
-    for val in range(min_lens):
-        input_datas.append(load_data(fold, min_len, max_len, min_df, val))
+    for val in range(max_dfs):
+        input_datas.append(load_data(fold, phrase_len, min_df, val))
 
     #Validate and evaluate models
     for X, y, train, test in input_datas:
         cross_validations(fold, X, y)
-        evaluations(X, y, train, test, k, gamma, alpha)
+        evaluations(X, y, train, test, k, gamma, alpha)'''
 
 if __name__ == '__main__':
     main()

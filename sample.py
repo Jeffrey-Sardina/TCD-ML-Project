@@ -17,12 +17,18 @@ book_dir = 'annotated/'
 def get_files(dir):
     return glob.glob(os.path.join(book_dir, '*.txt'))
 
-def remove_meta(file):
+def remove_meta(file_names):
     # removing first & last 50 words
-    splitted = file.split(" ", 50)[50]
-    tokenised = splitted.split(" ")
-    ls = ls[:len(ls)-50]
-    return " ".join(ls)
+    texts = []
+    for file_name in file_names:
+        with open(file_name) as inp:
+            text = inp.read().replace('\n', ' ')
+            splitted = text.split(" ", 50)[50]
+            tokenised = splitted.split(" ")
+            ls = tokenised[:len(tokenised)-50]
+            text = " ".join(ls)
+            texts.append(text)
+    return texts
 
 def sample(doc):
     tokenised = doc.split(" ")
@@ -34,14 +40,22 @@ def sample(doc):
 def find_middle(tokenised):
     middle = float(len(tokenised))/2
     if middle % 2 != 0:
-        return tokenised[int(middle - .5)]
-    else:
-        return (tokenised[int(middle)], tokenised[int(middle-1)])
+        return int(middle - .5)
+    return int(middle)
 
 def main():
     file_names = get_files(book_dir)
-    doc = remove_meta(file_names)
-    return sample(doc)
+
+    #Labels
+    years = [int(os.path.basename(x)[:4]) for x in file_names]
+
+    #Texts
+    docs = remove_meta(file_names)
+    for i, doc in enumerate(docs):
+        docs[i] = sample(doc)
+
+    
+    return docs, years
 
 if __name__ == '__main__':
     main()
