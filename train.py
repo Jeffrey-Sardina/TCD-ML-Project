@@ -62,25 +62,32 @@ def evaluations(xtrain, xtest, ytrain, ytest, alpha):
 # Post-cross-validation model evaludation code
 ###########################################################
 
-def eval_models(phrase_len, min_df, max_df, alpha):
+def eval_model(phrase_len, min_df, max_df, alpha, model_name):
     '''
-    This function runs evaluations(...) on a model with the given hyperparameters phrase_len, min_df, max_df, and alpha
+    This function trains and evaluates a model on the given data. It also compares it to a baseline
     '''
+    baseline = DummyRegressor(strategy="mean").fit(xtrain, ytrain)
     documents, y = sample.run_sample(total_len, num_samples)
     _, xtrain, xtest, ytrain, ytest = process_data(documents, y, fold, phrase_len, min_df, max_df)
-    data = evaluations(xtrain, xtest, ytrain, ytest, alpha)
-    data_str = ','.join(str(x) for x in data) + '\n'
+    if model_name == 'LinearRegression':
+        model = LinearRegression().fit(xtrain, ytrain)
+    elif model_name == 'Lasso':
+        model = Lasso(alpha=alpha).fit(xtrain, ytrain)
+    else:
+        model = Ridge(alpha=alpha).fit(xtrain, ytrain)
 
+    model_mse = mean_squared_error(ytest, model.predict(xtest))
+    baseline_mse = mean_squared_error(ytest, baseline.predict(xtest))
 
     print()
-    print('lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
-    print(data_str)
+    print('model_mse,baseline_mse')
+    print(model_mse, baseline_mse, sep=',')
 
 ###########################################################
 # Cross-validation code
 ###########################################################
 
-def cross_validations():
+def cross_validations(out_file_name):
     '''
     This function runs corss-validations for all valid combinations of a range of hyperparameters. Code is multiprocessed to speed it up, and results are written to a CSV file.
     '''
@@ -104,7 +111,7 @@ def cross_validations():
     result = pool.map(eval_all, arg_divs)
     pool.close()
 
-    with open('cross-val.csv', 'w') as out:
+    with open(out_file_name, 'w') as out:
         print('max_df,min_df,phrase_len,alpha,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse', file=out)
         for data_list in result:
             for line in data_list:
@@ -126,7 +133,7 @@ def eval_all(text_params):
                 
                 data = evaluations(xtrain, xtest, ytrain, ytest, alpha)
                 data_str = str(max_df) + ',' + str(min_df) + ',' + str(phrase_len) + ',' + str(alpha) + ','
-                data_str += ','.join(str(x) for x in data) + '\n'
+                data_str += ','.join(str(x) for x in data)
                 data_strs.append(data_str)
         except:
                 pass
@@ -146,7 +153,17 @@ def init_args(local_documents, local_y):
 ###########################################################
 
 def main():
-    cross_validations()
+    #Run cross-validation several times to get enough data to calc standard deviations
+    n = 10
+    for i in range(n):
+        cross_validations('cross-val_' + str(i) + '.csv')
+
+    #Construct a model based on the optimal hyperparameters and model type
+    max_df = 0
+    min_df = 0
+    phrase_len = 0
+    alpha = 0
+
 
 if __name__ == '__main__':
     main()
