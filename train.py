@@ -1,14 +1,11 @@
-import pandas as pd
-import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import KFold, train_test_split
 from sklearn.dummy import DummyRegressor
-from sklearn.neighbors import KNeighborsRegressor
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.metrics import mean_squared_error
-import sample
+from sklearn.model_selection import train_test_split
 from multiprocessing import Pool
 import random
+import sample
 
 #Global params
 fold = 5
@@ -80,8 +77,6 @@ def main():
             for line in data_list:
                 print(line, file=out)
 
-    # eval_model(phrase_len, min_df, max_df, alpha)
-
 def eval_model(phrase_len, min_df, max_df, alpha):
     documents, y = sample.run_sample(total_len, num_samples)
     _, xtrain, xtest, ytrain, ytest = process_data(documents, y, fold, phrase_len, min_df, max_df)
@@ -104,7 +99,6 @@ def eval_all(text_params):
                 i += 1
                 
                 data = evaluations(xtrain, xtest, ytrain, ytest, alpha)
-                print(max_df)
                 data_str = str(max_df) + ',' + str(min_df) + ',' + str(phrase_len) + ',' + str(alpha) + ','
                 data_str += ','.join(str(x) for x in data) + '\n'
                 data_strs.append(data_str)
@@ -112,37 +106,6 @@ def eval_all(text_params):
                 pass
                 print('error')
     return data_strs
-
-'''
-def eval_all():
-    max_dfs = [0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
-    min_dfs = [0.0, 0.01, 0.1, 0.2]
-    phrase_lens = [1, 3, 5, 7, 9]
-    alphas = [100, 10, 1, .1, .01, .001, .0001]
-
-    #Disk read
-    documents, y = sample.run_sample(total_len, num_samples)
-
-    data_str = ''
-    i = 0
-    for max_df in max_dfs:
-        for min_df in min_dfs:
-            for phrase_len in phrase_lens:
-                _, xtrain, xtest, ytrain, ytest = process_data(documents, y, fold, phrase_len, min_df, max_df)
-                for alpha in alphas:
-                    print(i)
-                    i += 1
-                    try:
-                        data = evaluations(xtrain, xtest, ytrain, ytest, alpha)
-                        data_str += ','.join([str(max_df), str(min_df), str(phrase_len), str(alpha)]) + ','
-                        data_str += ','.join(str(x) for x in data) + '\n'
-                    except:
-                        pass
-                        print('error')
-    with open('cross-val.csv', 'w') as out:
-        print('max_df,min_df,phrase_len,alpha,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse', file=out)
-        print(data_str, file=out)
-'''
 
 if __name__ == '__main__':
     main()
