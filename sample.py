@@ -1,17 +1,6 @@
 import glob
 import os
 
-'''
-An idea:
-
-remove the first and last 50 words, ust in case we missed some meta-data, and sample from the rest
-
-We need to either get documents of the same length only, or normalize for length. I like selecting fixed length sets, as otherwise the bag of words will be far too large.
-
-100 words then remove stopwords
-
-'''
-
 book_dir = 'annotated/'
 
 def get_files(folder):
@@ -51,8 +40,11 @@ def find_section(tokenised, prop):
     return int(len(tokenised) * prop)
 
 def main():
-    total_len = 100
-    num_samples = 3
+    total_len = 2000
+    num_samples = 20
+    run_sample(total_len, num_samples)
+
+def run_sample(total_len, num_samples):
     file_names = get_files(book_dir)
 
     #Labels

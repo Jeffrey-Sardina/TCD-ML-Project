@@ -11,6 +11,8 @@ import sample
 
 #Global params
 fold = 5
+total_len = 2000
+num_samples = 20
 
 def create_input_array(documents, phrase_len, min_df, max_df):
     '''
@@ -20,9 +22,9 @@ def create_input_array(documents, phrase_len, min_df, max_df):
     X = vectorizer.fit_transform(documents)
     return X
 
-def load_data(fold, phrase_len, min_df, max_df):
+def load_data(total_len, num_samples, fold, phrase_len, min_df, max_df):
     #Gather and process data into a form that we can run ML on
-    documents, y = sample.main()
+    documents, y = sample.run_sample(total_len, num_samples)
     X = create_input_array(documents, phrase_len, min_df, max_df)
 
     #Split into train and test segments
