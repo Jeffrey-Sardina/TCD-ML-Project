@@ -30,17 +30,29 @@ def remove_meta(file_names):
             texts.append(text)
     return texts
 
-def sample(doc):
+def sample(doc, total_len, num_samples):
     tokenised = doc.split(" ")
-    first_sample = tokenised[:30]
+
+    '''first_sample = tokenised[:30]
     last_sample = tokenised[-30:]
     middle_sample = tokenised[find_section(tokenised, 0.5)-20:find_section(tokenised, 0.5)+20]
-    return " ".join(first_sample) + " " + " ".join(last_sample) + " " + " ".join(middle_sample)
+    return " ".join(first_sample) + " " + " ".join(last_sample) + " " + " ".join(middle_sample)'''
+
+    samples = []
+    for i in range(num_samples):
+        start = i * (total_len // num_samples)
+        end = (i + 1) * (total_len // num_samples)
+        sample = ' '.join(tokenised[start:end])
+        sample = ' '.join(sample.strip().split())
+        samples.append(sample)
+    return ' '.join(samples)
 
 def find_section(tokenised, prop):
     return int(len(tokenised) * prop)
 
 def main():
+    total_len = 100
+    num_samples = 3
     file_names = get_files(book_dir)
 
     #Labels
@@ -49,9 +61,7 @@ def main():
     #Texts
     docs = remove_meta(file_names)
     for i, doc in enumerate(docs):
-        docs[i] = sample(doc)
-
-    print(docs[1])
+        docs[i] = sample(doc, total_len, num_samples)
 
     return docs, years
 
