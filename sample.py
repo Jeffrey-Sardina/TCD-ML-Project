@@ -14,8 +14,8 @@ We need to either get documents of the same length only, or normalize for length
 
 book_dir = 'annotated/'
 
-def get_files(dir):
-    return glob.glob(os.path.join(book_dir, '*.txt'))
+def get_files(folder):
+    return glob.glob(os.path.join(folder, '*.txt'))
 
 def remove_meta(file_names):
     # removing first & last 50 words
