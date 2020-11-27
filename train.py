@@ -7,14 +7,22 @@ from multiprocessing import Pool
 import random
 import sample
 
-#Global params
+###########################################################
+# Glocal variables
+###########################################################
+
+#Sampling and evaluating params
 fold = 5
 total_len = 2000
 num_samples = 20
 
-#Data
+#Data variables
 documents = None
 y = None
+
+###########################################################
+# General helper code
+###########################################################
 
 def create_input_array(documents, phrase_len, min_df, max_df):
     '''
@@ -25,12 +33,17 @@ def create_input_array(documents, phrase_len, min_df, max_df):
     return X
 
 def process_data(documents, y, fold, phrase_len, min_df, max_df):
-    #Gather and process data into a form that we can run ML on
+    '''
+    This function splits data between training and test sets, which are used in running training and evaluation.
+    '''
     X = create_input_array(documents, phrase_len, min_df, max_df)
     xtrain, xtest, ytrain, ytest = train_test_split(X, y, test_size=1 / fold)
     return X, xtrain, xtest, ytrain, ytest
 
-def evaluations(xtrain, xtest, ytrain, ytest, alpha,):
+def evaluations(xtrain, xtest, ytrain, ytest, alpha):
+    '''
+    This code runs evaluations of various linear regression models against a baseline. The alpha parameter is the multiplier to the regularization penalty in Lasso and Ridge Regression.
+    '''
     #Create models
     lin_reg_model = LinearRegression().fit(xtrain, ytrain)
     lasso_model = Lasso(alpha=alpha).fit(xtrain, ytrain)
@@ -45,12 +58,32 @@ def evaluations(xtrain, xtest, ytrain, ytest, alpha,):
 
     return lin_reg_mse, lasso_mse, ridge_mse, baseline_mse
 
-def init_args(local_documents, local_y):
-    global documents, y
-    documents = local_documents
-    y = local_y
+###########################################################
+# Post-cross-validation model evaludation code
+###########################################################
 
-def main():
+def eval_models(phrase_len, min_df, max_df, alpha):
+    '''
+    This function runs evaluations(...) on a model with the given hyperparameters phrase_len, min_df, max_df, and alpha
+    '''
+    documents, y = sample.run_sample(total_len, num_samples)
+    _, xtrain, xtest, ytrain, ytest = process_data(documents, y, fold, phrase_len, min_df, max_df)
+    data = evaluations(xtrain, xtest, ytrain, ytest, alpha)
+    data_str = ','.join(str(x) for x in data) + '\n'
+
+
+    print()
+    print('lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
+    print(data_str)
+
+###########################################################
+# Cross-validation code
+###########################################################
+
+def cross_validations():
+    '''
+    This function runs corss-validations for all valid combinations of a range of hyperparameters. Code is multiprocessed to speed it up, and results are written to a CSV file.
+    '''
     global documents, y
     documents, y = sample.run_sample(total_len, num_samples)
 
@@ -77,17 +110,10 @@ def main():
             for line in data_list:
                 print(line, file=out)
 
-def eval_model(phrase_len, min_df, max_df, alpha):
-    documents, y = sample.run_sample(total_len, num_samples)
-    _, xtrain, xtest, ytrain, ytest = process_data(documents, y, fold, phrase_len, min_df, max_df)
-    data = evaluations(xtrain, xtest, ytrain, ytest, alpha)
-    data_str = ','.join(str(x) for x in data) + '\n'
-
-    print()
-    print('lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
-    print(data_str)
-
 def eval_all(text_params):
+    '''
+    This function does the 'brunt work' of cross-validation--given a list of max_df, min_df, and phrase_len tuples (text_params) as hyperparameters and using a range of alpha (regularization multiplier) values, it runs evaluations on all of them and returns the MSEs of the results.
+    '''
     alphas = [100, 10, 1, .1, .01, .001, .0001]
     data_strs = []
     i = 0
@@ -106,6 +132,21 @@ def eval_all(text_params):
                 pass
                 print('error')
     return data_strs
+
+def init_args(local_documents, local_y):
+    '''
+    This function is used to provide global parameters to each process when multiprocessing
+    '''
+    global documents, y
+    documents = local_documents
+    y = local_y
+
+###########################################################
+# Startup code
+###########################################################
+
+def main():
+    cross_validations()
 
 if __name__ == '__main__':
     main()
