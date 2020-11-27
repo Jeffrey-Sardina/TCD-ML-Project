@@ -9,6 +9,9 @@ from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.metrics import mean_squared_error
 import sample
 
+#Global params
+fold = 5
+
 def create_input_array(documents, phrase_len, min_df, max_df):
     '''
     This function creates a bag of words (X / input) matrix to be used in the model based on the given documents
@@ -42,17 +45,25 @@ def evaluations(X, y, xtrain, xtest, ytrain, ytest, alpha, phrase_len):
     return phrase_len,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse
 
 def main():
-    fold = 5
-
-    #evaluate models
-    #(hyper)parameters
     phrase_len = 2
     min_df = int(1) #int for absolute counts, float for proportion
     max_df= float(1.0) #int for absolute counts, float for proportion
     alpha = .01
-
-    input_datas = []
+    
     max_dfs = [0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
+    eval_max_df(phrase_len, min_df, alpha, max_dfs)
+
+    min_dfs = [0.0, 0.01, 0.1, 0.2]
+    eval_min_df(phrase_len, max_df, alpha, min_dfs)
+
+    phrase_lens = [1, 3, 5, 7, 9]
+    eval_phrase_len(min_df, max_df, alpha, phrase_lens)
+
+    alphas = [100, 10, 1, .1, .01, .001]
+    eval_alpha(phrase_len, min_df, max_df, alphas)
+
+def eval_max_df(phrase_len, min_df, alpha, max_dfs):
+    input_datas = []
     for val in max_dfs:
         input_datas.append(load_data(fold, phrase_len, min_df, val))
 
@@ -65,15 +76,8 @@ def main():
     print('max_df,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
     print(data_str)
 
-    #evaluate models
-    #(hyper)parameters
-    phrase_len = 2
-    min_df = int(1) #int for absolute counts, float for proportion
-    max_df= float(1.0) #int for absolute counts, float for proportion
-    alpha = .01
-
+def eval_min_df(phrase_len, max_df, alpha, min_dfs):
     input_datas = []
-    min_dfs = [0.0, 0.01, 0.1, 0.2]
     for val in min_dfs:
         input_datas.append(load_data(fold, phrase_len, val, max_df))
 
@@ -86,15 +90,8 @@ def main():
     print('min_df,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
     print(data_str)
 
-    #evaluate models
-    #(hyper)parameters
-    phrase_len = 2
-    min_df = int(1) #int for absolute counts, float for proportion
-    max_df= float(1.0) #int for absolute counts, float for proportion
-    alpha = .01
-
+def eval_phrase_len(min_df, max_df, alpha, phrase_lens):
     input_datas = []
-    phrase_lens = [1, 3, 5, 7, 9]
     for val in phrase_lens:
         input_datas.append(load_data(fold, val, min_df, max_df))
 
@@ -107,15 +104,8 @@ def main():
     print('phrase_len,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
     print(data_str)
 
-    #evaluate models
-    #(hyper)parameters
-    phrase_len = 2
-    min_df = int(1) #int for absolute counts, float for proportion
-    max_df= float(1.0) #int for absolute counts, float for proportion
-    alpha = .01
-
+def eval_alpha(phrase_len, min_df, max_df, alphas):
     input_datas = []
-    alphas = [100, 10, 1, .1, .01, .001]
     for _ in alphas:
         input_datas.append(load_data(fold, phrase_len, min_df, max_df))
 
@@ -127,8 +117,6 @@ def main():
     print('Data for alpha')
     print('alpha,lin_reg_mse,lasso_mse,ridge_mse,baseline_mse')
     print(data_str)
-
-    
 
 if __name__ == '__main__':
     main()

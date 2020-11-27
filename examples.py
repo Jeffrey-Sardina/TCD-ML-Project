@@ -75,5 +75,3 @@ def ex_recommender():
     print('text:\n%.300s'%x[test[test_i]])
     for i in found[0]:
         print('match %d:\n%.300s'%(i,x[train[i]]))
-
-ex_recommender()

@@ -34,14 +34,11 @@ def sample(doc):
     tokenised = doc.split(" ")
     first_sample = tokenised[:30]
     last_sample = tokenised[-30:]
-    middle_sample = tokenised[find_middle(tokenised)-20:find_middle(tokenised)+20]
+    middle_sample = tokenised[find_section(tokenised, 0.5)-20:find_section(tokenised, 0.5)+20]
     return " ".join(first_sample) + " " + " ".join(last_sample) + " " + " ".join(middle_sample)
 
-def find_middle(tokenised):
-    middle = float(len(tokenised))/2
-    if middle % 2 != 0:
-        return int(middle - .5)
-    return int(middle)
+def find_section(tokenised, prop):
+    return int(len(tokenised) * prop)
 
 def main():
     file_names = get_files(book_dir)
@@ -54,7 +51,8 @@ def main():
     for i, doc in enumerate(docs):
         docs[i] = sample(doc)
 
-    
+    print(docs[1])
+
     return docs, years
 
 if __name__ == '__main__':
