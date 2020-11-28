@@ -141,21 +141,22 @@ def main():
                 pass
 
     #https://stackoverflow.com/questions/57546492/multiple-plots-on-common-x-axis-in-matplotlib-with-common-y-axis-labeling
-    figure.text(0.475, 0.01, 'Regularization Alpha', va='center')
+    figure.text(0.45, 0.01, 'Regularization Alpha', va='center', size=13)
     step = 1 / len(alphas)
     for i, alpha in enumerate(alphas):
         x_loc = i * step + step / 2
         y_loc = 0.025
         figure.text(x_loc, y_loc, str(alpha), va='center')
     
-    figure.text(0.01, 0.5, 'Min Document Frequency', va='center', rotation='vertical')
+    figure.text(0.01, 0.5, 'Min Document Frequency', va='center', rotation='vertical', size=13)
     step = 1 / len(min_dfs)
     for i, min_df in enumerate(reversed(min_dfs)):
         x_loc = 0.02
         y_loc = i * step + step / 2
         figure.text(x_loc, y_loc, str(min_df), va='center')
 
-    figure.text(0.45, 0.99, 'Cross-validations on ' + reg_type, va='center')
+    figure.text(0.4, 0.99, 'Cross-validations on ' + reg_type, va='center', size=15)
+    figure.text(0.45, 0.97, 'Double click to enlarge', va='center', size=13)
 
     #https://matplotlib.org/3.2.1/users/event_handling.html
     cid = figure.canvas.mpl_connect('button_press_event', onclick)
