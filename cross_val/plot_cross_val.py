@@ -5,7 +5,18 @@ import pandas as pd
 import numpy as np
 from matplotlib import cm
 
-def plot_3d(df, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2):
+axes = None
+i_elems = None
+j_elems = None
+df = None
+col1_head = None
+col2_head = None
+col3_head = None
+stdev_head = None
+fixed1_head = None
+fixed2_head = None
+
+def plot_3d(df, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2, title=None):
     #Add data
     flat = flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixed2_head, fixed2)
     x_ini = flat[col1_head]
@@ -28,6 +39,8 @@ def plot_3d(df, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, 
     #     axes.plot((x_loc, x_loc), (y_loc, y_loc), (z_loc, z_loc + stdev), color='#000000')
 
     #Label graph
+    if title != None:
+        axes.set_title(title)
     axes.set_xlabel(col1_head)
     axes.set_ylabel(col2_head)
     axes.set_zlabel('MSE')
@@ -75,21 +88,46 @@ def flatten_2d_avg(df, col1_head, col2_head):
             it += 1
     return df_processed.dropna()
 
+def onclick(event):
+    ax = event.inaxes
+    if event.dblclick:
+        for row in axes:
+            for item in row:
+                if ax == item:
+                    new_fig = plt.figure()
+                    i, j = ax.local_name
+                    new_ax = new_fig.add_subplot(111, projection='3d')
+                    title = fixed1_head + '=' + str(j_elems[j]) + '; ' + fixed2_head + '=' + str(i_elems[i])
+                    plot_3d(df, new_ax, col1_head, col2_head, col3_head, stdev_head, fixed1_head, j_elems[j], fixed2_head, i_elems[i], title=title)
+        plt.show()
+
 def load_data(fname):
     return pd.read_csv(fname, header=0)
 
 def main():
+    global axes, i_elems, j_elems, df, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed2_head
+
     df = load_data('aggregate.csv')
     col1_head = 'max_df'
     col2_head = 'phrase_len'
-    col3_head = 'lin_reg_mse_mean'
-    stdev_head = 'lin_reg_mse_stdev'
     fixed1_head = 'alpha'
     fixed2_head = 'min_df'
 
+    col3_head = 'lin_reg_mse_mean'
+    stdev_head = 'lin_reg_mse_stdev'
+    reg_type = 'Linear Regression'
+
+    col3_head = 'lasso_mse_mean'
+    stdev_head = 'lasso_mse_stdev'
+    reg_type = 'Lasso Regression'
+
+    col3_head = 'ridge_mse_mean'
+    stdev_head = 'ridge_mse_stdev'
+    reg_type = 'Ridge Regression'
+
     #From train.py
-    min_dfs = [0.0, 0.01, 0.1] #[0.0, 0.01, 0.1, 0.2]
-    alphas = [100, 10, 1, .1, .01, .001, .0001]
+    i_elems = min_dfs = [0.0, 0.01, 0.1] #[0.0, 0.01, 0.1, 0.2]
+    j_elems = alphas = [100, 10, 1, .1, .01, .001, .0001]
 
     #https://stackoverflow.com/questions/33942233/how-do-i-change-matplotlibs-subplot-projection-of-an-existing-axis
     #Create figure
@@ -97,26 +135,30 @@ def main():
     for i, fixed2 in enumerate(min_dfs):
         for j, fixed1 in enumerate(alphas):
             try:
+                axes[i][j].local_name = (i, j)
                 plot_3d(df, axes[i][j], col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2)
             except:
                 pass
 
     #https://stackoverflow.com/questions/57546492/multiple-plots-on-common-x-axis-in-matplotlib-with-common-y-axis-labeling
-    figure.text(0.45, 0.01, 'Min Document Frequency', va='center')
+    figure.text(0.475, 0.01, 'Regularization Alpha', va='center')
     step = 1 / len(alphas)
     for i, alpha in enumerate(alphas):
         x_loc = i * step + step / 2
         y_loc = 0.025
         figure.text(x_loc, y_loc, str(alpha), va='center')
     
-    figure.text(0.01, 0.5, 'Regularization Alpha', va='center', rotation='vertical')
+    figure.text(0.01, 0.5, 'Min Document Frequency', va='center', rotation='vertical')
     step = 1 / len(min_dfs)
-    for i, min_df in enumerate(min_dfs):
+    for i, min_df in enumerate(reversed(min_dfs)):
         x_loc = 0.02
         y_loc = i * step + step / 2
         figure.text(x_loc, y_loc, str(min_df), va='center')
 
-    figure.text(0.5, 0.99, 'Cross-validations', va='center')
+    figure.text(0.45, 0.99, 'Cross-validations on ' + reg_type, va='center')
+
+    #https://matplotlib.org/3.2.1/users/event_handling.html
+    cid = figure.canvas.mpl_connect('button_press_event', onclick)
 
     plt.tight_layout(rect=(0.01, 0.05, 0.99, 0.99))
     plt.show()
