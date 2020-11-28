@@ -66,9 +66,9 @@ def eval_model(phrase_len, min_df, max_df, alpha, model_name):
     '''
     This function trains and evaluates a model on the given data. It also compares it to a baseline
     '''
-    baseline = DummyRegressor(strategy="mean").fit(xtrain, ytrain)
     documents, y = sample.run_sample(total_len, num_samples)
     _, xtrain, xtest, ytrain, ytest = process_data(documents, y, fold, phrase_len, min_df, max_df)
+    baseline = DummyRegressor(strategy="mean").fit(xtrain, ytrain)
     if model_name == 'LinearRegression':
         model = LinearRegression().fit(xtrain, ytrain)
     elif model_name == 'Lasso':
@@ -163,7 +163,6 @@ def main():
     min_df = 0
     phrase_len = 0
     alpha = 0
-
 
 if __name__ == '__main__':
     main()
