@@ -21,17 +21,16 @@ def plot_3d(df, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, 
     z = z_ini.to_numpy().reshape(col1_len, col2_len)
     axes.plot_surface(x, y, z, cmap='inferno') #color='#ff0000aa')
 
-    for i, stdev in enumerate(stdevs):
-        x_loc = x_ini.iloc[i]
-        y_loc = y_ini.iloc[i]
-        z_loc = z_ini.iloc[i]
-        axes.plot((x_loc, x_loc), (y_loc, y_loc), (z_loc, z_loc + stdev), color='#000000')
+    # for i, stdev in enumerate(stdevs):
+    #     x_loc = x_ini.iloc[i]
+    #     y_loc = y_ini.iloc[i]
+    #     z_loc = z_ini.iloc[i]
+    #     axes.plot((x_loc, x_loc), (y_loc, y_loc), (z_loc, z_loc + stdev), color='#000000')
 
     #Label graph
     axes.set_xlabel(col1_head)
     axes.set_ylabel(col2_head)
-    axes.set_zlabel(col3_head)
-    axes.set_title('Initial data')
+    axes.set_zlabel('MSE')
 
 def flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixsed2_head, fixed2):
     col1s = df[col1_head].unique()
@@ -101,6 +100,25 @@ def main():
                 plot_3d(df, axes[i][j], col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2)
             except:
                 pass
+
+    #https://stackoverflow.com/questions/57546492/multiple-plots-on-common-x-axis-in-matplotlib-with-common-y-axis-labeling
+    figure.text(0.45, 0.01, 'Min Document Frequency', va='center')
+    step = 1 / len(alphas)
+    for i, alpha in enumerate(alphas):
+        x_loc = i * step + step / 2
+        y_loc = 0.025
+        figure.text(x_loc, y_loc, str(alpha), va='center')
+    
+    figure.text(0.01, 0.5, 'Regularization Alpha', va='center', rotation='vertical')
+    step = 1 / len(min_dfs)
+    for i, min_df in enumerate(min_dfs):
+        x_loc = 0.02
+        y_loc = i * step + step / 2
+        figure.text(x_loc, y_loc, str(min_df), va='center')
+
+    figure.text(0.5, 0.99, 'Cross-validations', va='center')
+
+    plt.tight_layout(rect=(0.01, 0.05, 0.99, 0.99))
     plt.show()
 
 if __name__ == '__main__':
