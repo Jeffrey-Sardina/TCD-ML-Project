@@ -19,7 +19,7 @@ def plot_3d(df, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, 
     x = x_ini.to_numpy().reshape(col1_len, col2_len)
     y = y_ini.to_numpy().reshape(col1_len, col2_len)
     z = z_ini.to_numpy().reshape(col1_len, col2_len)
-    axes.plot_surface(x, y, z, cmap='inferno') #color='#ff0000aa')
+    axes.plot_surface(x, y, z, cmap='inferno') #perceptually uniform
 
     # for i, stdev in enumerate(stdevs):
     #     x_loc = x_ini.iloc[i]
