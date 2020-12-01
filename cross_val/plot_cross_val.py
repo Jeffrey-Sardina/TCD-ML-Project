@@ -15,8 +15,11 @@ col3_head = None
 stdev_head = None
 fixed1_head = None
 fixed2_head = None
+def plot_3d(df, figure, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2, title=None, show_color_bar=False):
+    #Z range (must be run on pre-preprocessed data to ensure it is the same for all graphs)
+    min_z = min(df[col3_head])
+    max_z = max(df[col3_head])
 
-def plot_3d(df, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2, title=None):
     #Add data
     flat = flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixed2_head, fixed2)
     x_ini = flat[col1_head]
@@ -30,20 +33,33 @@ def plot_3d(df, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, 
     x = x_ini.to_numpy().reshape(col1_len, col2_len)
     y = y_ini.to_numpy().reshape(col1_len, col2_len)
     z = z_ini.to_numpy().reshape(col1_len, col2_len)
-    axes.plot_surface(x, y, z, cmap='inferno') #perceptually uniform
 
-    # for i, stdev in enumerate(stdevs):
-    #     x_loc = x_ini.iloc[i]
-    #     y_loc = y_ini.iloc[i]
-    #     z_loc = z_ini.iloc[i]
-    #     axes.plot((x_loc, x_loc), (y_loc, y_loc), (z_loc, z_loc + stdev), color='#000000')
+    #Plot data
+    #https://stackoverflow.com/questions/57123749/plotting-a-3d-line-intersecting-a-surface-in-mplot3d-matplotlib-python
+    surface = axes.plot_surface(x, y, z, edgecolor='#ffffff', cmap=cm.inferno, zorder=1) #perceptually uniform
+    
+    #Standardzize axes and colors
+    axes.set_zlim(min_z, max_z)
+    surface.set_clim(min_z, max_z)
+
+    #Use orthographic projection
+    axes.set_proj_type('ortho')
 
     #Label graph
-    if title != None:
+    if title != None: #only true when data is enlarged
         axes.set_title(title)
+        for i, stdev in enumerate(stdevs):
+            x_loc = x_ini.iloc[i]
+            y_loc = y_ini.iloc[i]
+            z_loc = z_ini.iloc[i]
+            axes.plot((x_loc, x_loc), (y_loc, y_loc), (z_loc, z_loc + stdev), color='#aaaaaa', zorder=12, linewidth=2)
     axes.set_xlabel(col1_head)
     axes.set_ylabel(col2_head)
     axes.set_zlabel('MSE')
+
+    
+    if(show_color_bar):
+        figure.colorbar(surface)
 
 def flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixsed2_head, fixed2):
     col1s = df[col1_head].unique()
@@ -98,7 +114,8 @@ def onclick(event):
                     i, j = ax.local_name
                     new_ax = new_fig.add_subplot(111, projection='3d')
                     title = fixed1_head + '=' + str(j_elems[j]) + '; ' + fixed2_head + '=' + str(i_elems[i])
-                    plot_3d(df, new_ax, col1_head, col2_head, col3_head, stdev_head, fixed1_head, j_elems[j], fixed2_head, i_elems[i], title=title)
+                    plot_3d(df, new_fig, new_ax, col1_head, col2_head, col3_head, stdev_head, fixed1_head, j_elems[j], fixed2_head, i_elems[i], title=title, show_color_bar=True)
+        plt.tight_layout()
         plt.show()
 
 def load_data(fname):
@@ -117,13 +134,13 @@ def main():
     stdev_head = 'lin_reg_mse_stdev'
     reg_type = 'Linear Regression'
 
-    col3_head = 'lasso_mse_mean'
+    '''col3_head = 'lasso_mse_mean'
     stdev_head = 'lasso_mse_stdev'
     reg_type = 'Lasso Regression'
 
     col3_head = 'ridge_mse_mean'
     stdev_head = 'ridge_mse_stdev'
-    reg_type = 'Ridge Regression'
+    reg_type = 'Ridge Regression' '''
 
     #From train.py
     i_elems = min_dfs = [0.0, 0.01, 0.1] #[0.0, 0.01, 0.1, 0.2]
@@ -134,11 +151,9 @@ def main():
     figure, axes = plt.subplots(nrows=len(min_dfs), ncols=len(alphas), subplot_kw={'projection':'3d'})
     for i, fixed2 in enumerate(min_dfs):
         for j, fixed1 in enumerate(alphas):
-            try:
-                axes[i][j].local_name = (i, j)
-                plot_3d(df, axes[i][j], col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2)
-            except:
-                pass
+            axes[i][j].local_name = (i, j)
+            show_color_bar = False
+            plot_3d(df, figure, axes[i][j], col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2, show_color_bar=show_color_bar)
 
     #https://stackoverflow.com/questions/57546492/multiple-plots-on-common-x-axis-in-matplotlib-with-common-y-axis-labeling
     figure.text(0.45, 0.01, 'Regularization Alpha', va='center', size=13)
@@ -159,7 +174,7 @@ def main():
     figure.text(0.45, 0.97, 'Double click to enlarge', va='center', size=13)
 
     #https://matplotlib.org/3.2.1/users/event_handling.html
-    cid = figure.canvas.mpl_connect('button_press_event', onclick)
+    figure.canvas.mpl_connect('button_press_event', onclick)
 
     plt.tight_layout(rect=(0.01, 0.05, 0.99, 0.99))
     plt.show()

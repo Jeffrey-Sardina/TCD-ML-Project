@@ -80,7 +80,7 @@ def eval_model(phrase_len, min_df, max_df, alpha, model_name):
     baseline_mse = mean_squared_error(ytest, baseline.predict(xtest))
 
     print()
-    print('model_mse,baseline_mse')
+    print(model_name + '_mse,baseline_mse')
     print(model_mse, baseline_mse, sep=',')
 
 ###########################################################
@@ -154,15 +154,19 @@ def init_args(local_documents, local_y):
 
 def main():
     #Run cross-validation several times to get enough data to calc standard deviations
-    n = 10
+    '''n = 10
     for i in range(n):
-        cross_validations('cross-val_' + str(i) + '.csv')
+        cross_validations('cross-val2_' + str(i) + '.csv')'''
 
     #Construct a model based on the optimal hyperparameters and model type
-    max_df = 0
-    min_df = 0
-    phrase_len = 0
-    alpha = 0
+    max_df = 0.3
+    min_df = 0.1
+    phrase_len = 7
+    alpha = 0.01
+    
+    eval_model(phrase_len, min_df, max_df, alpha, 'LinearRegression')
+    eval_model(phrase_len, min_df, max_df, alpha, 'Lasso')
+    eval_model(phrase_len, min_df, max_df, alpha, 'Ridge')
 
 if __name__ == '__main__':
     main()
