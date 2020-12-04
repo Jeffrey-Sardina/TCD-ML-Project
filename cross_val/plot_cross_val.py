@@ -1,10 +1,8 @@
 from matplotlib import cm
 import matplotlib.pyplot as plt
-import matplotlib as mp
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 import numpy as np
-from matplotlib import cm
 import time
 
 enlarged_axes = []
