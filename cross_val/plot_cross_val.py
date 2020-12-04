@@ -1,5 +1,6 @@
 from matplotlib import cm
 import matplotlib.pyplot as plt
+import matplotlib as mp
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 import numpy as np
@@ -56,10 +57,11 @@ def plot_3d(df, figure, axes, col1_head, col2_head, col3_head, stdev_head, fixed
     axes.set_xlabel(col1_head)
     axes.set_ylabel(col2_head)
     axes.set_zlabel('MSE')
-
     
     if(show_color_bar):
         figure.colorbar(surface)
+
+    return surface, min_z, max_z
 
 def flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixsed2_head, fixed2):
     col1s = df[col1_head].unique()
@@ -76,31 +78,6 @@ def flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixsed2_head, fixe
                 & (df[fixed1_head] == fixed1) \
                 & (df[fixsed2_head] == fixed2)            
             df_processed.loc[it] = df[condition].iloc[0]
-            it += 1
-    return df_processed.dropna()
-
-def flatten_2d_avg(df, col1_head, col2_head):
-    col1s = df[col1_head].unique()
-    col2s = df[col2_head].unique()
-    hyper_param_last_idx = 3
-
-    df_processed = pd.DataFrame(columns=df.columns)
-    it = 0
-    for col1 in col1s:
-        for col2 in col2s:
-            #Get subset where all hyperparameters are the same
-            condition = (df[col1_head] == col1) \
-                & (df[col2_head] == col2)
-            df_same_hyper = df[condition]
-
-            #Add new columns with aggreagate data to the datafram
-            new_cols = []
-            for i, col in enumerate(df_same_hyper.columns):
-                if i > hyper_param_last_idx:
-                    new_cols.append(np.mean(df_same_hyper[col]))
-                else:
-                    new_cols.append(np.median(df_same_hyper[col]))
-            df_processed.loc[it] = new_cols
             it += 1
     return df_processed.dropna()
 
@@ -124,7 +101,7 @@ def load_data(fname):
 def main():
     global axes, i_elems, j_elems, df, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed2_head
 
-    df = load_data('aggregate.csv')
+    df = load_data('first_round/aggregate.csv')
     col1_head = 'max_df'
     col2_head = 'phrase_len'
     fixed1_head = 'alpha'
@@ -148,35 +125,53 @@ def main():
 
     #https://stackoverflow.com/questions/33942233/how-do-i-change-matplotlibs-subplot-projection-of-an-existing-axis
     #Create figure
+    surface = None
+    min_z = None
+    max_z = None
     figure, axes = plt.subplots(nrows=len(min_dfs), ncols=len(alphas), subplot_kw={'projection':'3d'})
     for i, fixed2 in enumerate(min_dfs):
         for j, fixed1 in enumerate(alphas):
             axes[i][j].local_name = (i, j)
-            show_color_bar = False
-            plot_3d(df, figure, axes[i][j], col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2, show_color_bar=show_color_bar)
+            surface, min_z, max_z = plot_3d(df, figure, axes[i][j], col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2)
+
+    #Add a dsingle color bar to descirbe all the figures
+    #https://jdhao.github.io/2017/06/11/mpl_multiplot_one_colorbar/
+
+    c_left = 0.95
+    c_bottom = 0.1
+    c_width = 0.02
+    c_height = 0.8
+    colorbar_axes = figure.add_axes([c_left, c_bottom, c_width, c_height])
+    colorbar = figure.colorbar(surface, cax=colorbar_axes, ticks=np.linspace(min_z, max_z, 5))
+    colorbar.ax.set_yticklabels(int(x) for x in np.linspace(min_z, max_z, 5))
+    
+    left = 0.01
+    bottom = 0.05
+    width = 0.95
+    height = 0.99
+    plt.tight_layout(rect=(left, bottom, width, height))
 
     #https://stackoverflow.com/questions/57546492/multiple-plots-on-common-x-axis-in-matplotlib-with-common-y-axis-labeling
-    figure.text(0.45, 0.01, 'Regularization Alpha', va='center', size=13)
-    step = 1 / len(alphas)
+    figure.text(0.45, 0.01, 'Regularization Alpha', va='center', size=13, weight='bold')
+    step = (width - c_width) / len(alphas)
     for i, alpha in enumerate(alphas):
         x_loc = i * step + step / 2
         y_loc = 0.025
-        figure.text(x_loc, y_loc, str(alpha), va='center')
+        figure.text(x_loc, y_loc, str(alpha), va='center', weight='bold')
     
-    figure.text(0.01, 0.5, 'Min Document Frequency', va='center', rotation='vertical', size=13)
-    step = 1 / len(min_dfs)
+    figure.text(0.01, 0.5, 'Min Document Frequency', va='center', rotation='vertical', size=13, weight='bold')
+    step = height / len(min_dfs)
     for i, min_df in enumerate(reversed(min_dfs)):
         x_loc = 0.02
         y_loc = i * step + step / 2
-        figure.text(x_loc, y_loc, str(min_df), va='center')
+        figure.text(x_loc, y_loc, str(min_df), va='center', weight='bold')
 
-    figure.text(0.4, 0.99, 'Cross-validations on ' + reg_type, va='center', size=15)
-    figure.text(0.45, 0.97, 'Double click to enlarge', va='center', size=13)
+    figure.text(0.4, 0.99, 'Cross-validations on ' + reg_type, va='center', size=15, weight='bold')
+    figure.text(0.45, 0.97, 'Double click to enlarge', va='center', size=13, weight='bold')
 
     #https://matplotlib.org/3.2.1/users/event_handling.html
     figure.canvas.mpl_connect('button_press_event', onclick)
 
-    plt.tight_layout(rect=(0.01, 0.05, 0.99, 0.99))
     plt.show()
 
 if __name__ == '__main__':
