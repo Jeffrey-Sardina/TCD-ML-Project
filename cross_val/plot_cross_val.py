@@ -5,7 +5,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 import numpy as np
 from matplotlib import cm
+import time
 
+enlarged_axes = []
 axes = None
 i_elems = None
 j_elems = None
@@ -47,13 +49,16 @@ def plot_3d(df, figure, axes, col1_head, col2_head, col3_head, stdev_head, fixed
     axes.set_proj_type('ortho')
 
     #Label graph
+    error_bars = []
     if title != None: #only true when data is enlarged
-        axes.set_title(title)
+        axes.set_title(title + '\nDouble click to toggle error bars')
         for i, stdev in enumerate(stdevs):
             x_loc = x_ini.iloc[i]
             y_loc = y_ini.iloc[i]
             z_loc = z_ini.iloc[i]
-            axes.plot((x_loc, x_loc), (y_loc, y_loc), (z_loc, z_loc + stdev), color='#aaaaaa', zorder=12, linewidth=2)
+            error_bar = axes.plot((x_loc, x_loc), (y_loc, y_loc), (z_loc, z_loc + stdev), color='#aaaaaa', zorder=12, linewidth=2)
+            #error_bar[0].set_alpha(0)
+            error_bars.append(error_bar[0])
     axes.set_xlabel(col1_head)
     axes.set_ylabel(col2_head)
     axes.set_zlabel('MSE')
@@ -61,7 +66,7 @@ def plot_3d(df, figure, axes, col1_head, col2_head, col3_head, stdev_head, fixed
     if(show_color_bar):
         figure.colorbar(surface)
 
-    return surface, min_z, max_z
+    return surface, min_z, max_z, error_bars
 
 def flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixsed2_head, fixed2):
     col1s = df[col1_head].unique()
@@ -82,6 +87,7 @@ def flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixsed2_head, fixe
     return df_processed.dropna()
 
 def onclick(event):
+    global enlarged_axes
     ax = event.inaxes
     if event.dblclick:
         for row in axes:
@@ -91,9 +97,25 @@ def onclick(event):
                     i, j = ax.local_name
                     new_ax = new_fig.add_subplot(111, projection='3d')
                     title = fixed1_head + '=' + str(j_elems[j]) + '; ' + fixed2_head + '=' + str(i_elems[i])
-                    plot_3d(df, new_fig, new_ax, col1_head, col2_head, col3_head, stdev_head, fixed1_head, j_elems[j], fixed2_head, i_elems[i], title=title, show_color_bar=True)
+                    _, _, _, error_bars = plot_3d(df, new_fig, new_ax, col1_head, col2_head, col3_head, stdev_head, fixed1_head, j_elems[j], fixed2_head, i_elems[i], title=title, show_color_bar=True)
+                    new_fig.canvas.mpl_connect('button_press_event', onclick_sub)
+                    new_ax.error_bars = error_bars #new attr I added (not there by default)
+                    new_ax.showing_error_bars = True #new attr I added (not there by default)
+                    new_ax.toggle_time = 0 #new attr I added (not there by default)
         plt.tight_layout()
         plt.show()
+
+def onclick_sub(event):
+    ax = event.inaxes
+    if event.dblclick and time.time() - ax.toggle_time > 0.5:
+        for error_bar in ax.error_bars:
+            if ax.showing_error_bars:
+                error_bar.set_alpha(0)
+            else:
+                error_bar.set_alpha(1)
+        ax.showing_error_bars = not ax.showing_error_bars
+        ax.toggle_time = time.time()
+        plt.draw()
 
 def load_data(fname):
     return pd.read_csv(fname, header=0)
@@ -123,16 +145,16 @@ def main():
     i_elems = min_dfs = [0.0, 0.01, 0.1] #[0.0, 0.01, 0.1, 0.2]
     j_elems = alphas = [100, 10, 1, .1, .01, .001, .0001]
 
-    #https://stackoverflow.com/questions/33942233/how-do-i-change-matplotlibs-subplot-projection-of-an-existing-axis
     #Create figure
+    #https://stackoverflow.com/questions/33942233/how-do-i-change-matplotlibs-subplot-projection-of-an-existing-axis
     surface = None
     min_z = None
     max_z = None
     figure, axes = plt.subplots(nrows=len(min_dfs), ncols=len(alphas), subplot_kw={'projection':'3d'})
     for i, fixed2 in enumerate(min_dfs):
         for j, fixed1 in enumerate(alphas):
-            axes[i][j].local_name = (i, j)
-            surface, min_z, max_z = plot_3d(df, figure, axes[i][j], col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2)
+            axes[i][j].local_name = (i, j) #new attr I added (not there by default)
+            surface, min_z, max_z, _ = plot_3d(df, figure, axes[i][j], col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2)
 
     #Add a dsingle color bar to descirbe all the figures
     #https://jdhao.github.io/2017/06/11/mpl_multiplot_one_colorbar/
