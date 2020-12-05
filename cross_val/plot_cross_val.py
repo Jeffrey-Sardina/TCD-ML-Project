@@ -1,6 +1,7 @@
 from matplotlib import cm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.ticker as mtick
 import pandas as pd
 import numpy as np
 import time
@@ -16,6 +17,7 @@ col3_head = None
 stdev_head = None
 fixed1_head = None
 fixed2_head = None
+
 def plot_3d(df, figure, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed1, fixed2_head, fixed2, title=None, show_color_bar=False):
     #Z range (must be run on pre-preprocessed data to ensure it is the same for all graphs)
     min_z = min(df[col3_head])
@@ -37,7 +39,7 @@ def plot_3d(df, figure, axes, col1_head, col2_head, col3_head, stdev_head, fixed
 
     #Plot data
     #https://stackoverflow.com/questions/57123749/plotting-a-3d-line-intersecting-a-surface-in-mplot3d-matplotlib-python
-    surface = axes.plot_surface(x, y, z, edgecolor='#ffffff', cmap=cm.inferno, zorder=1) #perceptually uniform
+    surface = axes.plot_surface(x, y, z, cmap=cm.Reds, zorder=1) #saturation-based
     
     #Standardzize axes and colors
     axes.set_zlim(min_z, max_z)
@@ -49,20 +51,22 @@ def plot_3d(df, figure, axes, col1_head, col2_head, col3_head, stdev_head, fixed
     #Label graph
     error_bars = []
     if title != None: #only true when data is enlarged
-        axes.set_title(title + '\nDouble click to toggle error bars')
+        axes.set_title(title + '\nDouble click to toggle (+) error bars')
         for i, stdev in enumerate(stdevs):
             x_loc = x_ini.iloc[i]
             y_loc = y_ini.iloc[i]
             z_loc = z_ini.iloc[i]
-            error_bar = axes.plot((x_loc, x_loc), (y_loc, y_loc), (z_loc, z_loc + stdev), color='#aaaaaa', zorder=12, linewidth=2)
-            #error_bar[0].set_alpha(0)
+            error_bar = axes.plot((x_loc, x_loc), (y_loc, y_loc), (z_loc, z_loc + stdev), color='#888888', zorder=12, linewidth=2)
             error_bars.append(error_bar[0])
+
     axes.set_xlabel(col1_head)
     axes.set_ylabel(col2_head)
-    axes.set_zlabel('MSE')
+    axes.set_zlabel('MSE', rotation='horizontal')
     
     if(show_color_bar):
-        figure.colorbar(surface)
+        color_bar = figure.colorbar(surface)
+        color_bar.set_label('MSE')
+        color_bar.ax.xaxis.set_label_position('top')
 
     return surface, min_z, max_z, error_bars
 
@@ -127,15 +131,15 @@ def main():
     fixed1_head = 'alpha'
     fixed2_head = 'min_df'
 
-    col3_head = 'lin_reg_mse_mean'
+    '''col3_head = 'lin_reg_mse_mean'
     stdev_head = 'lin_reg_mse_stdev'
-    reg_type = 'Linear Regression'
+    reg_type = 'Linear Regression' '''
 
-    '''col3_head = 'lasso_mse_mean'
+    col3_head = 'lasso_mse_mean'
     stdev_head = 'lasso_mse_stdev'
     reg_type = 'Lasso Regression'
 
-    col3_head = 'ridge_mse_mean'
+    '''col3_head = 'ridge_mse_mean'
     stdev_head = 'ridge_mse_stdev'
     reg_type = 'Ridge Regression' '''
 
@@ -157,17 +161,19 @@ def main():
     #Add a dsingle color bar to descirbe all the figures
     #https://jdhao.github.io/2017/06/11/mpl_multiplot_one_colorbar/
 
-    c_left = 0.95
+    c_left = 0.925
     c_bottom = 0.1
     c_width = 0.02
     c_height = 0.8
     colorbar_axes = figure.add_axes([c_left, c_bottom, c_width, c_height])
     colorbar = figure.colorbar(surface, cax=colorbar_axes, ticks=np.linspace(min_z, max_z, 5))
     colorbar.ax.set_yticklabels(int(x) for x in np.linspace(min_z, max_z, 5))
-    
+    colorbar.set_label('MSE')
+    colorbar.ax.yaxis.set_label_position('right')
+
     left = 0.01
     bottom = 0.05
-    width = 0.95
+    width = 0.91
     height = 0.99
     plt.tight_layout(rect=(left, bottom, width, height))
 
