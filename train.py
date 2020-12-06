@@ -2,9 +2,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.dummy import DummyRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, roc_curve
 from sklearn.model_selection import train_test_split
 from multiprocessing import Pool
+import matplotlib.pyplot as plt
 import random
 import sample
 import numpy as np
@@ -78,37 +79,16 @@ def evaluations_knn(xtrain, xtest, ytrain, ytest, k):
 # Post-cross-validation model evaludation code
 ###########################################################
 
-def eval_model(phrase_len, min_df, max_df, alpha, model_name, verbose=True):
+def eval_model(phrase_len, min_df, max_df, alpha, k, model_name, verbose=True, random_seed=None):
     '''
     This function trains and evaluates a model on the given data. It also compares it to a baseline
     '''
     documents, y = sample.run_sample(total_len, num_samples)
-    _, xtrain, xtest, ytrain, ytest = process_data(documents, y, fold, phrase_len, min_df, max_df)
-    baseline = DummyRegressor(strategy="mean").fit(xtrain, ytrain)
-    if model_name == 'LinearRegression':
-        model = LinearRegression().fit(xtrain, ytrain)
-    elif model_name == 'Lasso':
-        model = Lasso(alpha=alpha).fit(xtrain, ytrain)
-    else:
-        model = Ridge(alpha=alpha).fit(xtrain, ytrain)
-
-    model_mse = mean_squared_error(ytest, model.predict(xtest))
-    baseline_mse = mean_squared_error(ytest, baseline.predict(xtest))
-
-    if verbose:
-        print()
-        print(model_name + '_mse,baseline_mse')
-        print(model_mse, baseline_mse, sep=',')
-    return model_mse - baseline_mse
-
-def eval_model_advanced(phrase_len, min_df, max_df, alpha, model_name, random_seed):
-    '''
-    This function trains and evaluates a model based on several metrics on the given data. It also compares it to a baseline
-    '''
-    documents, y = sample.run_sample(total_len, num_samples)
     _, xtrain, xtest, ytrain, ytest = process_data(documents, y, fold, phrase_len, min_df, max_df, random_seed=random_seed)
     baseline = DummyRegressor(strategy="mean").fit(xtrain, ytrain)
-    if model_name == 'LinearRegression':
+    if model_name == 'kNN':
+        model = KNeighborsRegressor(n_neighbors=k).fit(xtrain, ytrain)
+    elif model_name == 'LinearRegression':
         model = LinearRegression().fit(xtrain, ytrain)
     elif model_name == 'Lasso':
         model = Lasso(alpha=alpha).fit(xtrain, ytrain)
@@ -121,6 +101,27 @@ def eval_model_advanced(phrase_len, min_df, max_df, alpha, model_name, random_se
     print()
     print(model_name + '_mse,baseline_mse')
     print(model_mse, baseline_mse, sep=',')
+
+    return model_mse - baseline_mse
+
+def eval_model_advanced(phrase_len, min_df, max_df, alpha, k, model_name, random_seed):
+    '''
+    This function trains and evaluates a model based on several metrics on the given data. It also compares it to a baseline
+    '''
+    documents, y = sample.run_sample(total_len, num_samples)
+    X, xtrain, xtest, ytrain, ytest = process_data(documents, y, fold, phrase_len, min_df, max_df, random_seed=random_seed)
+    baseline = DummyRegressor(strategy="mean").fit(xtrain, ytrain)
+    if model_name == 'kNN':
+        model = KNeighborsRegressor(n_neighbors=k).fit(xtrain, ytrain)
+    elif model_name == 'LinearRegression':
+        model = LinearRegression().fit(xtrain, ytrain)
+    elif model_name == 'Lasso':
+        model = Lasso(alpha=alpha).fit(xtrain, ytrain)
+    else:
+        model = Ridge(alpha=alpha).fit(xtrain, ytrain)
+
+    model_mse = mean_squared_error(ytest, model.predict(xtest))
+    baseline_mse = mean_squared_error(ytest, baseline.predict(xtest))
 
     return model_mse - baseline_mse
 
@@ -250,9 +251,9 @@ def main():
         cross_validations('cross-val2_' + str(i) + '.csv')'''
 
     #Run cross-validation several times to get enough data to calc standard deviations (for kNN)
-    n = 1
+    '''n = 10
     for i in range(n):
-        cross_validations_knn('cross-val_knn' + str(i) + '.csv')
+        cross_validations_knn('cross-val_knn' + str(i + 1) + '.csv')'''
 
     #Construct a model based on the optimal hyperparameters and model type
     '''max_df = 0.3
@@ -267,7 +268,7 @@ def main():
         n = 100
         for i in range(n):
             print(i)
-            diff_from_baseline = eval_model(phrase_len, min_df, max_df, alpha, model, verbose=False)
+            diff_from_baseline = eval_model(phrase_len, min_df, max_df, alpha, None, model, verbose=False)
             diffs.append(diff_from_baseline)
             if diff_from_baseline < 0:
                 success += 1
@@ -277,14 +278,46 @@ def main():
         print(np.std(diffs, ddof=1))
         print()'''
 
-    #Best of the linear models
-    '''max_df = 0.3
+    #Construct a knn model based on the optimal hyperparameters and model type
+    max_df = 0.3
     min_df = 0.01
-    phrase_len = 3
-    alpha = 0.1
-    model = 'Ridge'
-    random_seed = 42
-    eval_model_advanced(phrase_len, min_df, max_df, alpha, model, random_seed)'''
+    phrase_len = 1
+    k = 5
+    model = 'kNN'
+
+    print(model)
+    success = 0
+    diffs = []
+    n = 100
+    for i in range(n):
+        print(i)
+        diff_from_baseline = eval_model(phrase_len, min_df, max_df, None, k, model)
+        diffs.append(diff_from_baseline)
+        if diff_from_baseline < 0:
+            success += 1
+    print(model)
+    print(success / n)
+    print(np.mean(diffs))
+    print(np.std(diffs, ddof=1))
+    print()
+
+    #Best of the linear models
+    # max_df = 0.3
+    # min_df = 0.01
+    # phrase_len = 3
+    # alpha = 0.1
+    # model = 'Ridge'
+    # random_seed = 42
+    # eval_model_advanced(phrase_len, min_df, max_df, alpha, None, model, random_seed)
+
+    # #kNN model
+    # max_df = 0.3
+    # min_df = 0.01
+    # phrase_len = 1
+    # k = 5
+    # model = 'kNN'
+    # random_seed = 42
+    # eval_model_advanced(phrase_len, min_df, max_df, None, k, model, random_seed)
 
 if __name__ == '__main__':
     main()
