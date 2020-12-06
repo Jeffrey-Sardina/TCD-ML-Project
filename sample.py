@@ -1,7 +1,7 @@
 import glob
 import os
 
-book_dir = 'annotated/'
+book_dir = 'auto_annotated/'
 
 def get_files(folder):
     return glob.glob(os.path.join(folder, '*.txt'))

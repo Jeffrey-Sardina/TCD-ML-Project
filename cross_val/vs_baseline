@@ -1,0 +1,15 @@
+LinearRegression
+Beating baseline rate:  0.7
+Mean(model-baseline):   -179.26880435765915
+STDEV(model-baseline):  248.65500161611672
+
+Lasso
+Beating baseline rate:  0.56
+Mean(model-baseline):    -82.41239714100332
+STDEV(model-baseline):  468.235695612544
+**NOT SIGNIFICANT (p=0.115)**
+
+Ridge
+Beating baseline rate:  0.78
+Mean(model-baseline):   -249.83841608186742
+STDEV(model

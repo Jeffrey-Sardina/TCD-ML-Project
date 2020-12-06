@@ -23,7 +23,7 @@ def plot_3d(df, figure, axes, col1_head, col2_head, col3_head, stdev_head, fixed
     min_z = min(df[col3_head])
     max_z = max(df[col3_head])
 
-    #Add data
+    #Add data      base [770 rows x 12 columns]  
     flat = flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixed2_head, fixed2)
     x_ini = flat[col1_head]
     y_ini = flat[col2_head]
@@ -73,7 +73,6 @@ def plot_3d(df, figure, axes, col1_head, col2_head, col3_head, stdev_head, fixed
 def flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixsed2_head, fixed2):
     col1s = df[col1_head].unique()
     col2s = df[col2_head].unique()
-    hyper_param_last_idx = 3
 
     df_processed = pd.DataFrame(columns=df.columns)
     it = 0
@@ -83,9 +82,11 @@ def flatten_2d(df, col1_head, col2_head, fixed1_head, fixed1, fixsed2_head, fixe
             condition = (df[col1_head] == col1) \
                 & (df[col2_head] == col2) \
                 & (df[fixed1_head] == fixed1) \
-                & (df[fixsed2_head] == fixed2)            
-            df_processed.loc[it] = df[condition].iloc[0]
-            it += 1
+                & (df[fixsed2_head] == fixed2)
+            restricted = df[condition]
+            if len(restricted) > 0:
+                df_processed.loc[it] = restricted.iloc[0]
+                it += 1
     return df_processed.dropna()
 
 def onclick(event):
@@ -125,7 +126,7 @@ def load_data(fname):
 def main():
     global axes, i_elems, j_elems, df, axes, col1_head, col2_head, col3_head, stdev_head, fixed1_head, fixed2_head
 
-    df = load_data('first_round/aggregate.csv')
+    df = load_data('second_round/aggregate.csv')
     col1_head = 'max_df'
     col2_head = 'phrase_len'
     fixed1_head = 'alpha'
@@ -135,13 +136,13 @@ def main():
     stdev_head = 'lin_reg_mse_stdev'
     reg_type = 'Linear Regression' '''
 
-    col3_head = 'lasso_mse_mean'
+    '''col3_head = 'lasso_mse_mean'
     stdev_head = 'lasso_mse_stdev'
-    reg_type = 'Lasso Regression'
+    reg_type = 'Lasso Regression' '''
 
-    '''col3_head = 'ridge_mse_mean'
+    col3_head = 'ridge_mse_mean'
     stdev_head = 'ridge_mse_stdev'
-    reg_type = 'Ridge Regression' '''
+    reg_type = 'Ridge Regression' 
 
     #From train.py
     i_elems = min_dfs = [0.0, 0.01, 0.1] #[0.0, 0.01, 0.1, 0.2]

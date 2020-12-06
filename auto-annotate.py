@@ -13,13 +13,14 @@ def is_valid_date(date_str):
     except:
         return False
 
-def remove500words(doc, n):
+def removeWords(doc, n, m):
     tokenised = doc.split(" ")
-    removed = tokenised[n:]
+    removed = tokenised[n:][:-m]
     return ' '.join(removed)
 
 def findDates(doc):
-    return re.search('(1[6-9]{3})', doc).group()
+    string = re.search('([Cc][Oo][Pp][Yy][Rr][Ii][Gg][Hh][Tt].*1[6-9]{3})', doc).group()
+    return re.search('(1[6-9]{3})', string).group()
 
 def get_files(dir):
     return glob.glob(os.path.join(book_dir, '*.txt'))
@@ -30,12 +31,11 @@ def main():
     # print(book_file_names)
     
     for book_file_name in book_file_names:
-        count+=1
         with open(book_file_name, 'r') as inp:
             try:
                 doc = inp.read()
                 year = findDates(doc)
-                directory = 'auto_annotated'
+                directory = 'auto_annotated/'
                 if not os.path.exists(directory):
                     os.makedirs(directory)
                 dpath = '%s/%s.txt' % (directory, year)
@@ -44,8 +44,11 @@ def main():
                     dpath = '%s/%s_%d.txt' % (directory, year, uniq)
                     uniq += 1
                 with open(dpath, 'w') as out:
-                    doc1 = remove500words(doc, 500)
+                    doc1 = removeWords(doc, 1000, 50)
                     out.write(doc1)
+                count+=1
+                if count % 50 == 0:
+                    print(count)
             except:
                 print('nah')
     print(count)

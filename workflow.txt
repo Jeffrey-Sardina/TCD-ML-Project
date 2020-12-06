@@ -31,11 +31,8 @@ Linux: (remove duplicates)
     rm *-8.txt
     rm *-0.txt
 
-Count words in cleaned files
-    Run count_words.py
-
-Manual
-    Label books by year and put them in annotated/
-
-Todo
-    samples files from annotated/
+ML steps
+    Label books by year and put them in auto_annotated/
+    samples files from auto_annotated/ and run cross-validations to select hyperparameters
+    Select best model
+    Eval model

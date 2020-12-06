@@ -13,7 +13,7 @@ def main():
     hyper_param_last_idx = 3
 
     #Input data
-    df = load_data('cross_vals_all.csv')
+    df = load_data('second_round/cross_vals_all.csv')
 
     #Output dataframe
     processed_cols = []

@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from multiprocessing import Pool
 import random
 import sample
+import numpy as np
 
 ###########################################################
 # Glocal variables
@@ -62,7 +63,7 @@ def evaluations(xtrain, xtest, ytrain, ytest, alpha):
 # Post-cross-validation model evaludation code
 ###########################################################
 
-def eval_model(phrase_len, min_df, max_df, alpha, model_name):
+def eval_model(phrase_len, min_df, max_df, alpha, model_name, verbose=True):
     '''
     This function trains and evaluates a model on the given data. It also compares it to a baseline
     '''
@@ -79,9 +80,11 @@ def eval_model(phrase_len, min_df, max_df, alpha, model_name):
     model_mse = mean_squared_error(ytest, model.predict(xtest))
     baseline_mse = mean_squared_error(ytest, baseline.predict(xtest))
 
-    print()
-    print(model_name + '_mse,baseline_mse')
-    print(model_mse, baseline_mse, sep=',')
+    if verbose:
+        print()
+        print(model_name + '_mse,baseline_mse')
+        print(model_mse, baseline_mse, sep=',')
+    return model_mse - baseline_mse
 
 ###########################################################
 # Cross-validation code
@@ -154,19 +157,40 @@ def init_args(local_documents, local_y):
 
 def main():
     #Run cross-validation several times to get enough data to calc standard deviations
-    '''n = 10
+    '''n = 100
     for i in range(n):
         cross_validations('cross-val2_' + str(i) + '.csv')'''
 
     #Construct a model based on the optimal hyperparameters and model type
-    max_df = 0.3
-    min_df = 0.1
-    phrase_len = 7
-    alpha = 0.01
+    '''max_df = 0.3
+    min_df = 0.01
+    phrase_len = 3
+    alpha = 0.1
     
-    eval_model(phrase_len, min_df, max_df, alpha, 'LinearRegression')
-    eval_model(phrase_len, min_df, max_df, alpha, 'Lasso')
-    eval_model(phrase_len, min_df, max_df, alpha, 'Ridge')
+    print('LinearRegression')
+    for model in ['LinearRegression', 'Lasso', 'Ridge']:
+        success = 0
+        diffs = []
+        n = 100
+        for i in range(n):
+            print(i)
+            diff_from_baseline = eval_model(phrase_len, min_df, max_df, alpha, model, verbose=False)
+            diffs.append(diff_from_baseline)
+            if diff_from_baseline < 0:
+                success += 1
+        print(model)
+        print(success / n)
+        print(np.mean(diffs))
+        print(np.std(diffs, ddof=1))
+        print()'''
+
+    #Final model
+    max_df = 0.3
+    min_df = 0.01
+    phrase_len = 3
+    alpha = 0.1
+    model = 'Ridge'
+    eval_model(phrase_len, min_df, max_df, alpha, model)
 
 if __name__ == '__main__':
     main()
