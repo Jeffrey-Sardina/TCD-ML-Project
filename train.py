@@ -33,12 +33,12 @@ def create_input_array(documents, phrase_len, min_df, max_df):
     X = vectorizer.fit_transform(documents)
     return X
 
-def process_data(documents, y, fold, phrase_len, min_df, max_df):
+def process_data(documents, y, fold, phrase_len, min_df, max_df, random_seed=None):
     '''
     This function splits data between training and test sets, which are used in running training and evaluation.
     '''
     X = create_input_array(documents, phrase_len, min_df, max_df)
-    xtrain, xtest, ytrain, ytest = train_test_split(X, y, test_size=1 / fold)
+    xtrain, xtest, ytrain, ytest = train_test_split(X, y, test_size=1 / fold, random_state=random_seed)
     return X, xtrain, xtest, ytrain, ytest
 
 def evaluations(xtrain, xtest, ytrain, ytest, alpha):
@@ -84,6 +84,29 @@ def eval_model(phrase_len, min_df, max_df, alpha, model_name, verbose=True):
         print()
         print(model_name + '_mse,baseline_mse')
         print(model_mse, baseline_mse, sep=',')
+    return model_mse - baseline_mse
+
+def eval_model_advanced(phrase_len, min_df, max_df, alpha, model_name, random_seed):
+    '''
+    This function trains and evaluates a model based on several metrics on the given data. It also compares it to a baseline
+    '''
+    documents, y = sample.run_sample(total_len, num_samples)
+    _, xtrain, xtest, ytrain, ytest = process_data(documents, y, fold, phrase_len, min_df, max_df, random_seed=random_seed)
+    baseline = DummyRegressor(strategy="mean").fit(xtrain, ytrain)
+    if model_name == 'LinearRegression':
+        model = LinearRegression().fit(xtrain, ytrain)
+    elif model_name == 'Lasso':
+        model = Lasso(alpha=alpha).fit(xtrain, ytrain)
+    else:
+        model = Ridge(alpha=alpha).fit(xtrain, ytrain)
+
+    model_mse = mean_squared_error(ytest, model.predict(xtest))
+    baseline_mse = mean_squared_error(ytest, baseline.predict(xtest))
+
+    print()
+    print(model_name + '_mse,baseline_mse')
+    print(model_mse, baseline_mse, sep=',')
+
     return model_mse - baseline_mse
 
 ###########################################################
@@ -190,7 +213,8 @@ def main():
     phrase_len = 3
     alpha = 0.1
     model = 'Ridge'
-    eval_model(phrase_len, min_df, max_df, alpha, model)
+    random_seed = 42
+    eval_model_advanced(phrase_len, min_df, max_df, alpha, model, random_seed)
 
 if __name__ == '__main__':
     main()

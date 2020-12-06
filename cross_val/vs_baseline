@@ -1,15 +1,23 @@
+Hyper-params used for all tests herein
+    max_df = 0.3
+    min_df = 0.01
+    phrase_len = 3
+    alpha = 0.1
+
 LinearRegression
-Beating baseline rate:  0.7
-Mean(model-baseline):   -179.26880435765915
-STDEV(model-baseline):  248.65500161611672
+    Beating baseline rate:  0.7
+    Mean(model-baseline):   -179.26880435765915
+    STDEV(model-baseline):  248.65500161611672
+    **BOREDERLINE SIGNIFICANT (p=0.0404)**
 
 Lasso
-Beating baseline rate:  0.56
-Mean(model-baseline):    -82.41239714100332
-STDEV(model-baseline):  468.235695612544
-**NOT SIGNIFICANT (p=0.115)**
+    Beating baseline rate:  0.56
+    Mean(model-baseline):    -82.41239714100332
+    STDEV(model-baseline):  468.235695612544
+    **NOT SIGNIFICANT (p=0.115)**
 
 Ridge
-Beating baseline rate:  0.78
-Mean(model-baseline):   -249.83841608186742
-STDEV(model
+    Beating baseline rate:  0.78
+    Mean(model-baseline):   -249.83841608186742
+    STDEV(model-baseline):  256.94562567662024
+    **SIGNIFICANT (p=1.075e-8)**
